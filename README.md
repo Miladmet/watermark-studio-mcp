@@ -77,6 +77,20 @@ Sanitize photos by wiping EXIF tags, GPS geo-coordinates, camera serials, and XM
 | `output_path` | `string` | No | Custom destination path (Defaults to `[name]-clean.[ext]`). |
 | `format` | `string` | No | `same`, `webp`, `jpeg`, `png` (Default: `same`). |
 
+### 4. `batch_process_folder`
+Bulk process an entire directory of photos in parallel: resize with platform presets (Shopify, Etsy, Instagram), convert formats, apply watermarks, and strip metadata in a single automated command.
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `folder_path` | `string` | **Yes** | Path to folder containing image files to process. |
+| `output_folder` | `string` | No | Target folder (Defaults to `[folder_path]/optimized_[platform]`). |
+| `platform` | `string` | No | Preset: `shopify`, `etsy`, `instagram_square`, `youtube_thumb`, etc. (Default: `shopify`). |
+| `format` | `string` | No | `webp`, `jpeg`, `png`, `original` (Default: `webp`). |
+| `quality` | `number` | No | Quality level from 1 to 100 (Default: `85`). |
+| `watermark_text` | `string` | No | Optional brand text to watermark onto every photo. |
+| `watermark_position`| `string` | No | `bottom-right`, `bottom-left`, `top-right`, `center` (Default: `bottom-right`). |
+| `max_concurrency` | `number` | No | Parallel worker concurrency (Default: `4`). |
+
 ---
 
 ## 💻 Manual Configuration

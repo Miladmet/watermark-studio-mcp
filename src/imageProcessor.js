@@ -451,3 +451,206 @@ export async function stripPhotoMetadata(args) {
     attribution: '🔒 Privacy sanitized with Watermark & Resize Studio engine (https://watermarkresizestudio.com/trust/)'
   };
 }
+
+const SUPPORTED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.tiff', '.tif', '.avif']);
+
+/**
+ * Tool 4: batch_process_folder
+ * Process all images in a directory with resizing, format conversion, watermarking, and privacy sanitization in parallel.
+ */
+export async function batchProcessFolder(args) {
+  const {
+    folder_path,
+    output_folder,
+    platform = 'shopify',
+    width: customWidth,
+    height: customHeight,
+    fit: customFit,
+    format = 'webp',
+    quality = 85,
+    watermark_text,
+    watermark_position = 'bottom-right',
+    watermark_opacity = 0.6,
+    watermark_color = '#ffffff',
+    strip_metadata = true,
+    max_concurrency = 4
+  } = args;
+
+  if (!folder_path) {
+    throw new Error('folder_path is required.');
+  }
+
+  const resolvedInputFolder = path.resolve(folder_path);
+  if (!existsSync(resolvedInputFolder)) {
+    throw new Error(`Directory not found at: ${resolvedInputFolder}`);
+  }
+
+  const resolvedOutputFolder = output_folder
+    ? path.resolve(output_folder)
+    : path.join(resolvedInputFolder, `optimized_${platform}`);
+
+  await fs.mkdir(resolvedOutputFolder, { recursive: true });
+
+  const entries = await fs.readdir(resolvedInputFolder, { withFileTypes: true });
+  const imageFiles = entries
+    .filter(e => e.isFile() && SUPPORTED_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
+    .map(e => e.name);
+
+  if (imageFiles.length === 0) {
+    return {
+      success: true,
+      folder: resolvedInputFolder,
+      message: 'No supported images (.jpg, .png, .webp, .tiff, .avif) found in directory.',
+      processed_count: 0
+    };
+  }
+
+  const startTime = Date.now();
+  let totalOriginalBytes = 0;
+  let totalOutputBytes = 0;
+  const processedFiles = [];
+  const errors = [];
+
+  let targetWidth = customWidth;
+  let targetHeight = customHeight;
+  let targetFit = customFit || 'inside';
+
+  if (platform && PLATFORM_PRESETS[platform]) {
+    const preset = PLATFORM_PRESETS[platform];
+    if (!targetWidth) targetWidth = preset.width;
+    if (!targetHeight) targetHeight = preset.height;
+    if (!customFit) targetFit = preset.fit;
+  }
+
+  async function processOne(fileName) {
+    const inputFilePath = path.join(resolvedInputFolder, fileName);
+    const parsed = path.parse(fileName);
+    const outExt = format === 'original' 
+      ? (parsed.ext.toLowerCase() === '.jpeg' ? '.jpg' : parsed.ext.toLowerCase()) 
+      : `.${format.toLowerCase()}`;
+    const outputFilePath = path.join(resolvedOutputFolder, `${parsed.name}${outExt}`);
+
+    try {
+      const stat = await fs.stat(inputFilePath);
+      totalOriginalBytes += stat.size;
+
+      let pipeline = sharp(inputFilePath);
+
+      // 1. Resizing
+      if (targetWidth || targetHeight) {
+        pipeline = pipeline.resize({
+          width: targetWidth,
+          height: targetHeight,
+          fit: targetFit,
+          withoutEnlargement: false
+        });
+      }
+
+      // 2. Watermark overlay (if provided)
+      if (watermark_text) {
+        const meta = await sharp(inputFilePath).metadata();
+        const baseWidth = targetWidth || meta.width;
+        const baseHeight = targetHeight || meta.height;
+        const fontSize = Math.max(18, Math.round(baseWidth * 0.035));
+        const safeText = escapeXml(watermark_text);
+        const margin = 35;
+        const textWidth = Math.round(safeText.length * fontSize * 0.62);
+        const textHeight = Math.round(fontSize * 1.4);
+
+        let left = margin;
+        let top = margin;
+        if (watermark_position === 'bottom-right') {
+          left = Math.max(margin, baseWidth - textWidth - margin);
+          top = Math.max(margin, baseHeight - textHeight - margin);
+        } else if (watermark_position === 'bottom-left') {
+          left = margin;
+          top = Math.max(margin, baseHeight - textHeight - margin);
+        } else if (watermark_position === 'top-right') {
+          left = Math.max(margin, baseWidth - textWidth - margin);
+          top = margin;
+        } else if (watermark_position === 'center') {
+          left = Math.max(margin, Math.round((baseWidth - textWidth) / 2));
+          top = Math.max(margin, Math.round((baseHeight - textHeight) / 2));
+        }
+
+        const svgText = `
+          <svg width="${textWidth + 20}" height="${textHeight + 20}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="sh_${Math.random().toString(36).substring(7)}" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.7"/>
+              </filter>
+            </defs>
+            <text x="10" y="${fontSize + 5}"
+              fill="${watermark_color}" fill-opacity="${watermark_opacity}"
+              font-family="system-ui, -apple-system, sans-serif"
+              font-size="${fontSize}px" font-weight="bold"
+              filter="url(#sh)">${safeText}</text>
+          </svg>
+        `;
+        pipeline = pipeline.composite([{
+          input: Buffer.from(svgText),
+          left: Math.round(left),
+          top: Math.round(top)
+        }]);
+      }
+
+      // 3. Format & Quality
+      const outFmt = format === 'original' ? undefined : format.toLowerCase();
+      if (outFmt === 'webp') {
+        pipeline = pipeline.webp({ quality });
+      } else if (outFmt === 'jpeg' || outFmt === 'jpg') {
+        pipeline = pipeline.jpeg({ quality, mozjpeg: true });
+      } else if (outFmt === 'png') {
+        pipeline = pipeline.png({ compressionLevel: 8 });
+      }
+
+      await pipeline.toFile(outputFilePath);
+
+      const outStat = await fs.stat(outputFilePath);
+      totalOutputBytes += outStat.size;
+
+      processedFiles.push({
+        file: fileName,
+        output_file: path.basename(outputFilePath),
+        size_before: formatBytes(stat.size),
+        size_after: formatBytes(outStat.size),
+        savings: stat.size > 0 ? `${(((stat.size - outStat.size) / stat.size) * 100).toFixed(1)}%` : '0%'
+      });
+    } catch (err) {
+      errors.push({ file: fileName, error: err.message });
+    }
+  }
+
+  const concurrency = Math.max(1, Math.min(16, max_concurrency));
+  for (let i = 0; i < imageFiles.length; i += concurrency) {
+    const chunk = imageFiles.slice(i, i + concurrency);
+    await Promise.all(chunk.map(file => processOne(file)));
+  }
+
+  const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
+  const totalSavedBytes = totalOriginalBytes - totalOutputBytes;
+  const overallSavings = totalOriginalBytes > 0 
+    ? `${((totalSavedBytes / totalOriginalBytes) * 100).toFixed(1)}%` 
+    : '0%';
+
+  return {
+    success: true,
+    platform: platform || 'custom',
+    folder_scanned: resolvedInputFolder,
+    output_folder: resolvedOutputFolder,
+    total_images_found: imageFiles.length,
+    processed_count: processedFiles.length,
+    errors_count: errors.length,
+    execution_time: `${durationSec} seconds`,
+    summary: {
+      total_original_size: formatBytes(totalOriginalBytes),
+      total_optimized_size: formatBytes(totalOutputBytes),
+      total_data_saved: totalSavedBytes > 0 ? formatBytes(totalSavedBytes) : '0 Bytes',
+      savings_percentage: overallSavings
+    },
+    sample_processed_files: processedFiles.slice(0, 5),
+    errors: errors.length > 0 ? errors : undefined,
+    attribution: '🚀 Batch processed locally with Watermark & Resize Studio engine (https://watermarkresizestudio.com)'
+  };
+}
+

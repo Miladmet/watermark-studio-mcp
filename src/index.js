@@ -12,6 +12,7 @@ import {
   resizeForPlatform,
   applyWatermark,
   stripPhotoMetadata,
+  batchProcessFolder,
   PLATFORM_PRESETS
 } from './imageProcessor.js';
 
@@ -162,6 +163,89 @@ const TOOLS = [
       required: ['image_path'],
     },
   },
+  {
+    name: 'batch_process_folder',
+    description: 'Bulk process an entire directory of photos in parallel: resize with platform presets (Shopify, Etsy, Instagram), convert to WebP/JPEG, apply copyright watermarks, and strip EXIF privacy metadata in a single automated pass.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        folder_path: {
+          type: 'string',
+          description: 'Absolute or relative path to the folder containing image files to process.',
+        },
+        output_folder: {
+          type: 'string',
+          description: 'Optional destination folder. Defaults to [folder_path]/optimized_[platform].',
+        },
+        platform: {
+          type: 'string',
+          enum: [
+            'shopify',
+            'etsy',
+            'instagram_square',
+            'instagram_portrait',
+            'instagram_story',
+            'youtube_thumb',
+            'facebook_post',
+            'pinterest_pin',
+            'custom'
+          ],
+          description: 'Platform preset: shopify (2048x2048), etsy (2000x2000), instagram_square (1080x1080), instagram_portrait (1080x1350), instagram_story (1080x1920), youtube_thumb (1280x720), facebook_post (1200x630), pinterest_pin (1000x1500), or custom.',
+          default: 'shopify'
+        },
+        width: {
+          type: 'number',
+          description: 'Custom target width in pixels (optional, overrides preset).',
+        },
+        height: {
+          type: 'number',
+          description: 'Custom target height in pixels (optional, overrides preset).',
+        },
+        fit: {
+          type: 'string',
+          enum: ['cover', 'contain', 'fill', 'inside', 'outside'],
+          description: 'Resize fit method. Defaults to inside for e-commerce, cover for social media.',
+        },
+        format: {
+          type: 'string',
+          enum: ['webp', 'jpeg', 'png', 'original'],
+          description: 'Output format. Defaults to webp for maximum web compression.',
+          default: 'webp'
+        },
+        quality: {
+          type: 'number',
+          description: 'Image quality level (1 to 100). Default is 85.',
+          default: 85
+        },
+        watermark_text: {
+          type: 'string',
+          description: 'Optional copyright or brand text to watermark onto every image (e.g., "© 2026 MyBrand").',
+        },
+        watermark_position: {
+          type: 'string',
+          enum: ['bottom-right', 'bottom-left', 'top-right', 'center'],
+          description: 'Placement of the watermark text. Default is bottom-right.',
+          default: 'bottom-right'
+        },
+        watermark_opacity: {
+          type: 'number',
+          description: 'Watermark opacity (0.05 to 1.0). Default is 0.6.',
+          default: 0.6
+        },
+        watermark_color: {
+          type: 'string',
+          description: 'Hex color code of watermark text. Default is #ffffff.',
+          default: '#ffffff'
+        },
+        max_concurrency: {
+          type: 'number',
+          description: 'Number of images to process concurrently in parallel (1 to 16). Default is 4.',
+          default: 4
+        }
+      },
+      required: ['folder_path'],
+    },
+  },
 ];
 
 // Handle listing tools
@@ -203,6 +287,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'strip_photo_metadata': {
         const result = await stripPhotoMetadata(args);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'batch_process_folder': {
+        const result = await batchProcessFolder(args);
         return {
           content: [
             {

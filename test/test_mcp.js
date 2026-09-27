@@ -3,13 +3,20 @@ import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { fork, spawn } from 'child_process';
-import { resizeForPlatform, applyWatermark, stripPhotoMetadata } from '../src/imageProcessor.js';
+import {
+  resizeForPlatform,
+  applyWatermark,
+  stripPhotoMetadata,
+  batchProcessFolder
+} from '../src/imageProcessor.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEST_DIR = path.join(__dirname, 'output');
+const CATALOG_DIR = path.join(TEST_DIR, 'sample_catalog');
 
 async function setup() {
   await fs.mkdir(TEST_DIR, { recursive: true });
+  await fs.mkdir(CATALOG_DIR, { recursive: true });
 
   // Generate a test high-res image
   const sampleImagePath = path.join(TEST_DIR, 'sample_product.jpg');
@@ -37,10 +44,31 @@ async function setup() {
     .png()
     .toFile(sampleLogoPath);
 
-  return { sampleImagePath, sampleLogoPath };
+  // Generate a catalog of 4 diverse sample images for batch processing test
+  for (let i = 1; i <= 4; i++) {
+    const ext = i % 2 === 0 ? 'png' : 'jpg';
+    const filePath = path.join(CATALOG_DIR, `product_${i}.${ext}`);
+    const color = {
+      r: Math.floor(Math.random() * 200 + 50),
+      g: Math.floor(Math.random() * 200 + 50),
+      b: Math.floor(Math.random() * 200 + 50)
+    };
+    await sharp({
+      create: {
+        width: 2500,
+        height: 1800,
+        channels: 3,
+        background: color
+      }
+    })
+    [ext === 'png' ? 'png' : 'jpeg']({ quality: 90 })
+    .toFile(filePath);
+  }
+
+  return { sampleImagePath, sampleLogoPath, catalogDir: CATALOG_DIR };
 }
 
-async function runDirectTests(sampleImagePath, sampleLogoPath) {
+async function runDirectTests(sampleImagePath, sampleLogoPath, catalogDir) {
   console.log('\n--- 1. Testing resize_for_platform ---');
   
   // Test 1: Shopify Preset
@@ -110,10 +138,27 @@ async function runDirectTests(sampleImagePath, sampleLogoPath) {
     output_path: path.join(TEST_DIR, 'test_sanitized.jpg')
   });
   console.log('✓ Metadata sanitization test passed:', cleanResult.verification);
+
+  console.log('\n--- 4. Testing batch_process_folder ---');
+
+  // Test 8: Batch Folder Process
+  const batchResult = await batchProcessFolder({
+    folder_path: catalogDir,
+    platform: 'shopify',
+    format: 'webp',
+    watermark_text: '© 2026 Batch Test',
+    watermark_position: 'bottom-right',
+    max_concurrency: 4
+  });
+  console.log('✓ Batch process folder test passed:');
+  console.log('  Files found:', batchResult.total_images_found);
+  console.log('  Processed count:', batchResult.processed_count);
+  console.log('  Data saved:', batchResult.summary.total_data_saved, `(${batchResult.summary.savings_percentage})`);
+  console.log('  Execution time:', batchResult.execution_time);
 }
 
-async function runMcpStdioTests(sampleImagePath) {
-  console.log('\n--- 4. Testing MCP Stdio JSON-RPC Interface ---');
+async function runMcpStdioTests(sampleImagePath, catalogDir) {
+  console.log('\n--- 5. Testing MCP Stdio JSON-RPC Interface ---');
 
   const serverProcess = spawn('node', [path.join(__dirname, '../src/index.js')], {
     stdio: ['pipe', 'pipe', 'pipe']
@@ -123,14 +168,13 @@ async function runMcpStdioTests(sampleImagePath) {
     // console.log('[Server stderr]:', data.toString().trim());
   });
 
-  let messageResolver;
   const pendingRequests = new Map();
 
   let buffer = '';
   serverProcess.stdout.on('data', (chunk) => {
     buffer += chunk.toString();
     const lines = buffer.split('\n');
-    buffer = lines.pop(); // keep partial line
+    buffer = lines.pop();
 
     for (const line of lines) {
       if (!line.trim()) continue;
@@ -174,36 +218,38 @@ async function runMcpStdioTests(sampleImagePath) {
   console.log('✓ MCP Server Exposed Tools:', toolNames);
   if (!toolNames.includes('resize_for_platform') ||
       !toolNames.includes('apply_watermark') ||
-      !toolNames.includes('strip_photo_metadata')) {
-    throw new Error('Not all 3 required tools were exposed by MCP server!');
+      !toolNames.includes('strip_photo_metadata') ||
+      !toolNames.includes('batch_process_folder')) {
+    throw new Error('Not all 4 required tools were exposed by MCP server!');
   }
 
-  // 3. Call resize_for_platform via MCP
-  const mcpCallResponse = await sendRpc('tools/call', {
-    name: 'resize_for_platform',
+  // 3. Call batch_process_folder via MCP
+  const mcpBatchResponse = await sendRpc('tools/call', {
+    name: 'batch_process_folder',
     arguments: {
-      image_path: sampleImagePath,
-      platform: 'etsy',
+      folder_path: catalogDir,
+      platform: 'instagram_square',
       format: 'webp',
-      output_path: path.join(TEST_DIR, 'test_mcp_etsy.webp')
+      watermark_text: '© MCP Live Test'
     }
   }, 3);
 
-  const toolOutput = JSON.parse(mcpCallResponse.result?.content?.[0]?.text);
-  console.log('✓ MCP tools/call (resize_for_platform) executed successfully:');
-  console.log('  Preset:', toolOutput.platform);
-  console.log('  Dimensions:', toolOutput.dimensions);
+  const toolOutput = JSON.parse(mcpBatchResponse.result?.content?.[0]?.text);
+  console.log('✓ MCP tools/call (batch_process_folder) executed successfully:');
+  console.log('  Platform:', toolOutput.platform);
+  console.log('  Processed:', toolOutput.processed_count, 'images');
+  console.log('  Savings:', toolOutput.summary.savings_percentage);
   console.log('  Attribution backlink present:', toolOutput.attribution.includes('watermarkresizestudio.com'));
 
   serverProcess.kill();
-  console.log('\n🎉 ALL MCP TOOLS & JSON-RPC PROTOCOL TESTS PASSED 100%!');
+  console.log('\n🎉 ALL 4 MCP TOOLS & JSON-RPC PROTOCOL TESTS PASSED 100%!');
 }
 
 async function main() {
   try {
-    const { sampleImagePath, sampleLogoPath } = await setup();
-    await runDirectTests(sampleImagePath, sampleLogoPath);
-    await runMcpStdioTests(sampleImagePath);
+    const { sampleImagePath, sampleLogoPath, catalogDir } = await setup();
+    await runDirectTests(sampleImagePath, sampleLogoPath, catalogDir);
+    await runMcpStdioTests(sampleImagePath, catalogDir);
   } catch (err) {
     console.error('❌ Test failed with error:', err);
     process.exit(1);
