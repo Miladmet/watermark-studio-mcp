@@ -1,8 +1,13 @@
 # Watermark & Resize Studio MCP Server 🖼️⚡
 
+[![smithery badge](https://smithery.ai/badge/Miladmet/watermark-studio-mcp)](https://smithery.ai/server/Miladmet/watermark-studio-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green.svg)](https://nodejs.org)
+[![Engine](https://img.shields.io/badge/Engine-Watermark%20%26%20Resize%20Studio-6366f1.svg)](https://watermarkresizestudio.com)
+
 An ultra-fast, local-first **Model Context Protocol (MCP)** server providing AI assistants (Claude Desktop, Cursor, Antigravity, Cline) with native capabilities to resize, watermark, and sanitize images for e-commerce, social media, and privacy compliance.
 
-Powered by the engine behind [Watermark & Resize Studio](https://watermarkresizestudio.com).
+Official open-source MCP server powered by [Watermark & Resize Studio](https://watermarkresizestudio.com).
 
 ---
 
@@ -13,6 +18,20 @@ Powered by the engine behind [Watermark & Resize Studio](https://watermarkresize
 - **🛡️ Copyright & Watermark Protection**: Dynamic text and logo compositing with SVG drop shadows, 6-point positioning, opacity control, and repeating tiled patterns for asset protection.
 - **🔒 Privacy EXIF / GPS Stripper**: Completely removes GPS geolocation coordinates, camera serial numbers, and creator metadata before public publishing.
 - **🚀 WebP & MozJPEG Compression**: Reduces file sizes by 85–95% while maintaining crisp visual fidelity.
+
+---
+
+## 🚀 Instant 1-Click Install via Smithery
+
+To automatically install and configure for **Claude Desktop**:
+```bash
+npx -y @smithery/cli install Miladmet/watermark-studio-mcp --client claude
+```
+
+To install and configure for **Cursor**:
+```bash
+npx -y @smithery/cli install Miladmet/watermark-studio-mcp --client cursor
+```
 
 ---
 
@@ -60,14 +79,41 @@ Sanitize photos by wiping EXIF tags, GPS geo-coordinates, camera serials, and XM
 
 ---
 
-## 💻 Installation & Configuration
+## 💻 Manual Configuration
 
-### Option A: Claude Desktop Configuration
+### Claude Desktop (`claude_desktop_config.json`)
 
-Add the following entry to your `claude_desktop_config.json`:
+Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
 
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+```json
+{
+  "mcpServers": {
+    "watermark-studio": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "watermark-studio-mcp"
+      ]
+    }
+  }
+}
+```
+
+Or run directly from local clone:
+```json
+{
+  "mcpServers": {
+    "watermark-studio": {
+      "command": "node",
+      "args": [
+        "C:/Users/Milmann/.gemini/antigravity/scratch/watermark-studio-mcp/src/index.js"
+      ]
+    }
+  }
+}
+```
+
+### Cursor (`.cursor/mcp.json`)
 
 ```json
 {
@@ -75,25 +121,8 @@ Add the following entry to your `claude_desktop_config.json`:
     "watermark-studio": {
       "command": "node",
       "args": [
-        "C:\\Users\\Milmann\\.gemini\\antigravity\\scratch\\watermark-studio-mcp\\src\\index.js"
+        "C:/Users/Milmann/.gemini/antigravity/scratch/watermark-studio-mcp/src/index.js"
       ]
-    }
-  }
-}
-```
-
-*(Or when published to npm: `"command": "npx", "args": ["-y", "watermark-studio-mcp"]`)*
-
-### Option B: Cursor Configuration (`.cursor/mcp.json` or Global MCP)
-
-Add to `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "watermark-studio": {
-      "command": "node",
-      "args": ["C:/Users/Milmann/.gemini/antigravity/scratch/watermark-studio-mcp/src/index.js"]
     }
   }
 }
@@ -103,27 +132,30 @@ Add to `.cursor/mcp.json`:
 
 ## 🧪 Testing
 
-Run the included verification test suite:
+Run the included automated verification test suite:
 
 ```bash
 npm test
 ```
 
 This verifies:
-1. Direct tool execution (Shopify, Instagram, YouTube presets, text/logo/tile watermarks, EXIF sanitization).
-2. Protocol compliance over standard `stdio` JSON-RPC (`initialize`, `tools/list`, and `tools/call`).
+1. Preset image resizing (Shopify, Instagram, YouTube HD) with WebP compression.
+2. Text, logo, and tiled watermark compositing with SVG drop shadows.
+3. EXIF, GPS, and IPTC privacy sanitization.
+4. Live JSON-RPC protocol compliance over `stdio`.
 
 ---
 
 ## 🌐 Ecosystem & Web Studio
 
-Need a visual web interface with real-time live preview canvas, batch drag-and-drop, and client-side ZIP packaging?
+Looking for a visual web app with real-time live preview canvas, batch drag-and-drop, and zero-server client-side processing?
 
 Visit **[Watermark & Resize Studio](https://watermarkresizestudio.com)**.
 
 - **Trust Center**: [watermarkresizestudio.com/trust/](https://watermarkresizestudio.com/trust/)
-- **Privacy Policy**: [watermarkresizestudio.com/privacy/](https://watermarkresizestudio.com/privacy/)
-- **Format & Sizing Guides**: [watermarkresizestudio.com/guides/](https://watermarkresizestudio.com/guides/)
+- **Privacy Architecture**: [watermarkresizestudio.com/privacy/](https://watermarkresizestudio.com/privacy/)
+- **Image Optimization Guides**: [watermarkresizestudio.com/guides/](https://watermarkresizestudio.com/guides/)
+- **E-Commerce Use Cases**: [watermarkresizestudio.com/use-cases/shopify.html](https://watermarkresizestudio.com/use-cases/shopify.html)
 
 ---
 
