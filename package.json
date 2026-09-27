@@ -1,7 +1,7 @@
 {
   "name": "watermark-studio-mcp",
-  "version": "1.1.0",
-  "description": "High-performance Model Context Protocol (MCP) server for batch image resizing, watermarking, and EXIF privacy stripping by Watermark & Resize Studio.",
+  "version": "1.2.0",
+  "description": "High-performance Model Context Protocol (MCP) server for batch image resizing, watermarking, EXIF privacy stripping, and OpenGraph social card generation by Watermark & Resize Studio.",
   "main": "src/index.js",
   "bin": {
     "watermark-studio-mcp": "src/index.js"
@@ -26,6 +26,8 @@
     "resize",
     "watermark",
     "exif-stripper",
+    "opengraph",
+    "social-card",
     "shopify",
     "instagram",
     "etsy",
@@ -37,7 +39,7 @@
   "homepage": "https://watermarkresizestudio.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Miladmet/watermark-studio-mcp.git"
+    "url": "git+https://github.com/Miladmet/watermark-studio-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/Miladmet/watermark-studio-mcp/issues"

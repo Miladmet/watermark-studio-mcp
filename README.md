@@ -17,6 +17,7 @@ Official open-source MCP server powered by [Watermark & Resize Studio](https://w
 - **⚡ 100% Local Processing**: All operations run locally via `sharp` (libvips C++ engine). Zero cloud uploads, zero external API latency, zero bandwidth costs.
 - **🛍️ E-Commerce & Platform Presets**: Instant batch-ready resizing for **Shopify (2048x2048)**, **Etsy (2000x2000)**, **Instagram Square/Story/Portrait**, **YouTube Thumbnails**, **Facebook**, and **Pinterest**.
 - **🛡️ Copyright & Watermark Protection**: Dynamic text and logo compositing with SVG drop shadows, 6-point positioning, opacity control, and repeating tiled patterns for asset protection.
+- **🖼️ 1200x630 OpenGraph Social Cards**: Generate viral Twitter/LinkedIn/OG preview cards with modern gradient themes (`dark-violet`, `ocean-blue`, `sunset`, `cyber-emerald`), auto text-wrapping, brand pills, and background photo/logo overlays.
 - **🔒 Privacy EXIF / GPS Stripper**: Completely removes GPS geolocation coordinates, camera serial numbers, and creator metadata before public publishing.
 - **🚀 WebP & MozJPEG Compression**: Reduces file sizes by 85–95% while maintaining crisp visual fidelity.
 
@@ -92,6 +93,21 @@ Bulk process an entire directory of photos in parallel: resize with platform pre
 | `watermark_position`| `string` | No | `bottom-right`, `bottom-left`, `top-right`, `center` (Default: `bottom-right`). |
 | `max_concurrency` | `number` | No | Parallel worker concurrency (Default: `4`). |
 
+### 5. `generate_social_card`
+Generate professional 1200x630 OpenGraph and Twitter preview cards with modern gradients, bold typography, brand pill badges, and optional background photo or logo overlays.
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `title` | `string` | **Yes** | Headline text for the social card (e.g., blog post title or product update). |
+| `subtitle` | `string` | No | Supporting subheader or descriptive tagline. |
+| `brand_name` | `string` | No | Brand/category text for top pill badge (Default: `Watermark & Resize Studio`). |
+| `theme` | `string` | No | Gradient scheme: `dark-violet`, `ocean-blue`, `sunset`, `cyber-emerald` (Default: `dark-violet`). |
+| `logo_path` | `string` | No | Path to brand logo PNG/SVG to overlay in top-right. |
+| `background_image_path` | `string` | No | Path to background photo (automatically blurred with dark contrast mask). |
+| `format` | `string` | No | `png`, `webp`, `jpeg` (Default: `png`). |
+| `quality` | `number` | No | Compression quality from 1 to 100 (Default: `90`). |
+| `output_path` | `string` | No | Custom destination path (Defaults to `social-card-[slug].[format]`). |
+
 ---
 
 ## 💻 Manual Configuration
@@ -157,7 +173,9 @@ This verifies:
 1. Preset image resizing (Shopify, Instagram, YouTube HD) with WebP compression.
 2. Text, logo, and tiled watermark compositing with SVG drop shadows.
 3. EXIF, GPS, and IPTC privacy sanitization.
-4. Live JSON-RPC protocol compliance over `stdio`.
+4. Parallel multi-core batch processing of entire image folders.
+5. 1200x630 OpenGraph social card generation with gradient themes and brand badges.
+6. Live JSON-RPC protocol compliance over `stdio`.
 
 ---
 

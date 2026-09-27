@@ -13,13 +13,14 @@ import {
   applyWatermark,
   stripPhotoMetadata,
   batchProcessFolder,
+  generateSocialCard,
   PLATFORM_PRESETS
 } from './imageProcessor.js';
 
 const server = new Server(
   {
     name: 'watermark-studio-mcp',
-    version: '1.0.0',
+    version: '1.2.0',
   },
   {
     capabilities: {
@@ -246,6 +247,58 @@ const TOOLS = [
       required: ['folder_path'],
     },
   },
+  {
+    name: 'generate_social_card',
+    description: 'Generate high-converting 1200x630 OpenGraph and Twitter preview share cards with modern gradients, bold typography, brand pill badges, and optional background photo or logo overlays.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description: 'Headline text for the social card (e.g. blog title, product update, announcement).',
+        },
+        subtitle: {
+          type: 'string',
+          description: 'Optional secondary description or tagline.',
+        },
+        brand_name: {
+          type: 'string',
+          description: 'Brand or category name displayed in the top pill badge (default: "Watermark & Resize Studio").',
+          default: 'Watermark & Resize Studio'
+        },
+        theme: {
+          type: 'string',
+          enum: ['dark-violet', 'ocean-blue', 'sunset', 'cyber-emerald'],
+          description: 'Gradient color scheme for the card. Default is dark-violet.',
+          default: 'dark-violet'
+        },
+        logo_path: {
+          type: 'string',
+          description: 'Optional path to a PNG/SVG logo to position in the top-right corner.',
+        },
+        background_image_path: {
+          type: 'string',
+          description: 'Optional path to a background photo to use behind the card (blurred and masked with dark overlay).',
+        },
+        format: {
+          type: 'string',
+          enum: ['png', 'webp', 'jpeg'],
+          description: 'Output image format. Default is png.',
+          default: 'png'
+        },
+        quality: {
+          type: 'number',
+          description: 'Image quality level (1 to 100). Default is 90.',
+          default: 90
+        },
+        output_path: {
+          type: 'string',
+          description: 'Optional output file path. Defaults to social-card-[slug].[format] in current directory.',
+        }
+      },
+      required: ['title'],
+    },
+  },
 ];
 
 // Handle listing tools
@@ -299,6 +352,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'batch_process_folder': {
         const result = await batchProcessFolder(args);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'generate_social_card': {
+        const result = await generateSocialCard(args);
         return {
           content: [
             {

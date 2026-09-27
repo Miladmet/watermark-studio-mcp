@@ -7,7 +7,8 @@ import {
   resizeForPlatform,
   applyWatermark,
   stripPhotoMetadata,
-  batchProcessFolder
+  batchProcessFolder,
+  generateSocialCard
 } from '../src/imageProcessor.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -155,10 +156,30 @@ async function runDirectTests(sampleImagePath, sampleLogoPath, catalogDir) {
   console.log('  Processed count:', batchResult.processed_count);
   console.log('  Data saved:', batchResult.summary.total_data_saved, `(${batchResult.summary.savings_percentage})`);
   console.log('  Execution time:', batchResult.execution_time);
+
+  console.log('\n--- 5. Testing generate_social_card ---');
+
+  // Test 9: Generate Social Card with gradient theme and branding
+  const cardResult = await generateSocialCard({
+    title: 'How to Batch Resize & Watermark Images for Shopify in 2026',
+    subtitle: 'Step-by-step automation guide for high-converting ecommerce product catalogs',
+    brand_name: 'Shopify Pro Guides',
+    theme: 'dark-violet',
+    logo_path: sampleLogoPath,
+    background_image_path: sampleImagePath,
+    format: 'png',
+    output_path: path.join(TEST_DIR, 'test_social_card.png')
+  });
+  console.log('✓ Social card generation test passed:');
+  console.log('  Title:', cardResult.title);
+  console.log('  Dimensions:', cardResult.dimensions);
+  console.log('  Theme:', cardResult.theme);
+  console.log('  Output file:', cardResult.output_file);
+  console.log('  File size:', cardResult.file_size);
 }
 
 async function runMcpStdioTests(sampleImagePath, catalogDir) {
-  console.log('\n--- 5. Testing MCP Stdio JSON-RPC Interface ---');
+  console.log('\n--- 6. Testing MCP Stdio JSON-RPC Interface ---');
 
   const serverProcess = spawn('node', [path.join(__dirname, '../src/index.js')], {
     stdio: ['pipe', 'pipe', 'pipe']
@@ -219,8 +240,9 @@ async function runMcpStdioTests(sampleImagePath, catalogDir) {
   if (!toolNames.includes('resize_for_platform') ||
       !toolNames.includes('apply_watermark') ||
       !toolNames.includes('strip_photo_metadata') ||
-      !toolNames.includes('batch_process_folder')) {
-    throw new Error('Not all 4 required tools were exposed by MCP server!');
+      !toolNames.includes('batch_process_folder') ||
+      !toolNames.includes('generate_social_card')) {
+    throw new Error('Not all 5 required tools were exposed by MCP server!');
   }
 
   // 3. Call batch_process_folder via MCP
@@ -241,8 +263,31 @@ async function runMcpStdioTests(sampleImagePath, catalogDir) {
   console.log('  Savings:', toolOutput.summary.savings_percentage);
   console.log('  Attribution backlink present:', toolOutput.attribution.includes('watermarkresizestudio.com'));
 
+  // 4. Call generate_social_card via MCP
+  const mcpCardResponse = await sendRpc('tools/call', {
+    name: 'generate_social_card',
+    arguments: {
+      title: 'Watermark Studio MCP v1.2.0 Released',
+      subtitle: 'Build social preview cards directly from your AI agent',
+      theme: 'cyber-emerald',
+      format: 'png',
+      output_path: path.join(TEST_DIR, 'mcp_test_social_card.png')
+    }
+  }, 4);
+
+  const rawText = mcpCardResponse.result?.content?.[0]?.text;
+  if (mcpCardResponse.result?.isError) {
+    console.error('MCP Error text:', rawText);
+  }
+  const cardOutput = JSON.parse(rawText);
+  console.log('✓ MCP tools/call (generate_social_card) executed successfully:');
+  console.log('  Title:', cardOutput.title);
+  console.log('  Theme:', cardOutput.theme);
+  console.log('  Dimensions:', cardOutput.dimensions);
+  console.log('  Attribution present:', cardOutput.attribution.includes('watermarkresizestudio.com'));
+
   serverProcess.kill();
-  console.log('\n🎉 ALL 4 MCP TOOLS & JSON-RPC PROTOCOL TESTS PASSED 100%!');
+  console.log('\n🎉 ALL 5 MCP TOOLS & JSON-RPC PROTOCOL TESTS PASSED 100%!');
 }
 
 async function main() {

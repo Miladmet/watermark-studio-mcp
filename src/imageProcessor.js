@@ -654,3 +654,255 @@ export async function batchProcessFolder(args) {
   };
 }
 
+/**
+ * Helper to wrap text into multiple lines for SVG rendering
+ */
+function wrapLines(text, maxChars = 34) {
+  if (!text) return [];
+  const words = text.trim().split(/\s+/);
+  const lines = [];
+  let current = '';
+
+  for (const word of words) {
+    if ((current + ' ' + word).trim().length <= maxChars) {
+      current = (current + ' ' + word).trim();
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+const CARD_THEMES = {
+  'dark-violet': {
+    bg: '#0b0a13',
+    glow1: '#a855f7',
+    glow2: '#ec4899',
+    badgeBg: 'rgba(168, 85, 247, 0.2)',
+    badgeBorder: 'rgba(168, 85, 247, 0.45)',
+    badgeText: '#d8b4fe',
+    accentText: '#c084fc'
+  },
+  'ocean-blue': {
+    bg: '#080f1e',
+    glow1: '#3b82f6',
+    glow2: '#06b6d4',
+    badgeBg: 'rgba(59, 130, 246, 0.2)',
+    badgeBorder: 'rgba(59, 130, 246, 0.45)',
+    badgeText: '#93c5fd',
+    accentText: '#60a5fa'
+  },
+  'sunset': {
+    bg: '#140812',
+    glow1: '#f97316',
+    glow2: '#f43f5e',
+    badgeBg: 'rgba(249, 115, 22, 0.2)',
+    badgeBorder: 'rgba(249, 115, 22, 0.45)',
+    badgeText: '#fdba74',
+    accentText: '#fb923c'
+  },
+  'cyber-emerald': {
+    bg: '#060f11',
+    glow1: '#10b981',
+    glow2: '#14b8a6',
+    badgeBg: 'rgba(16, 185, 129, 0.2)',
+    badgeBorder: 'rgba(16, 185, 129, 0.45)',
+    badgeText: '#6ee7b7',
+    accentText: '#34d399'
+  }
+};
+
+/**
+ * Tool 5: generate_social_card
+ * Generate high-converting 1200x630 OpenGraph & Twitter preview share cards.
+ */
+export async function generateSocialCard(args) {
+  const {
+    title,
+    subtitle,
+    brand_name = 'Watermark & Resize Studio',
+    logo_path,
+    background_image_path,
+    theme = 'dark-violet',
+    format = 'png',
+    quality = 90,
+    output_path
+  } = args;
+
+  if (!title) {
+    throw new Error('title is required to generate a social share card.');
+  }
+
+  const selectedTheme = CARD_THEMES[theme] || CARD_THEMES['dark-violet'];
+  const safeTitle = escapeXml(title);
+  const safeSubtitle = subtitle ? escapeXml(subtitle) : '';
+  const safeBrand = escapeXml(brand_name.toUpperCase());
+
+  // Line wrapping
+  const titleCharLimit = safeTitle.length > 50 ? 38 : 32;
+  const titleLines = wrapLines(safeTitle, titleCharLimit);
+  const subtitleLines = safeSubtitle ? wrapLines(safeSubtitle, 48).slice(0, 2) : [];
+
+  const titleFontSize = titleLines.length > 3 ? 42 : (titleLines.length > 2 ? 48 : 54);
+  const titleLineHeight = Math.round(titleFontSize * 1.25);
+
+  let titleTspans = '';
+  titleLines.forEach((line, index) => {
+    const yOffset = index === 0 ? 0 : titleLineHeight;
+    titleTspans += `<tspan x="80" dy="${yOffset}">${line}</tspan>`;
+  });
+
+  let subtitleTspans = '';
+  subtitleLines.forEach((line, index) => {
+    const yOffset = index === 0 ? 0 : 34;
+    subtitleTspans += `<tspan x="80" dy="${yOffset}">${line}</tspan>`;
+  });
+
+  // Calculate dynamic start Y based on content
+  const startY = titleLines.length > 2 ? 240 : 270;
+  const subtitleY = startY + (titleLines.length * titleLineHeight) + 25;
+
+  const svgCard = `
+    <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="glow1" cx="15%" cy="20%" r="55%">
+          <stop offset="0%" stop-color="${selectedTheme.glow1}" stop-opacity="0.32"/>
+          <stop offset="100%" stop-color="${selectedTheme.bg}" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="glow2" cx="85%" cy="80%" r="60%">
+          <stop offset="0%" stop-color="${selectedTheme.glow2}" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="${selectedTheme.bg}" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="textDrop" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.8"/>
+        </filter>
+        <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="100%" stop-color="#f1f5f9"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Base Canvas -->
+      <rect width="1200" height="630" fill="${selectedTheme.bg}"/>
+      <rect width="1200" height="630" fill="url(#glow1)"/>
+      <rect width="1200" height="630" fill="url(#glow2)"/>
+
+      <!-- Inner Border -->
+      <rect x="25" y="25" width="1150" height="580" rx="16" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5"/>
+
+      <!-- Category / Brand Pill Badge -->
+      <g transform="translate(80, 75)">
+        <rect width="${Math.max(160, brand_name.length * 11 + 50)}" height="40" rx="20"
+          fill="${selectedTheme.badgeBg}" stroke="${selectedTheme.badgeBorder}" stroke-width="1.2"/>
+        <text x="22" y="25" font-family="system-ui, -apple-system, sans-serif" font-size="15px" font-weight="700"
+          fill="${selectedTheme.badgeText}" letter-spacing="1.2px">⚡ ${safeBrand}</text>
+      </g>
+
+      <!-- Main Headline Title -->
+      <text x="80" y="${startY}" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="${titleFontSize}px" font-weight="800" fill="url(#titleGrad)" filter="url(#textDrop)">
+        ${titleTspans}
+      </text>
+
+      <!-- Subtitle -->
+      ${subtitleLines.length > 0 ? `
+      <text x="80" y="${subtitleY}" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="24px" font-weight="500" fill="#94a3b8" filter="url(#textDrop)">
+        ${subtitleTspans}
+      </text>` : ''}
+
+      <!-- Bottom Meta Bar -->
+      <line x1="80" y1="540" x2="1120" y2="540" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1"/>
+      <text x="80" y="575" font-family="system-ui, -apple-system, sans-serif" font-size="16px" font-weight="600" fill="${selectedTheme.accentText}">
+        watermarkresizestudio.com
+      </text>
+      <text x="1120" y="575" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="15px" font-weight="500" fill="#64748b">
+        1200 × 630 HD Social Card
+      </text>
+    </svg>
+  `;
+
+  let pipeline;
+
+  if (background_image_path) {
+    const resolvedBg = path.resolve(background_image_path);
+    if (!existsSync(resolvedBg)) {
+      throw new Error(`Background image not found at: ${resolvedBg}`);
+    }
+
+    // Resize background image to 1200x630 cover and apply dark mask
+    const baseBg = await sharp(resolvedBg)
+      .resize(1200, 630, { fit: 'cover' })
+      .blur(4)
+      .toBuffer();
+
+    const darkMaskSvg = `
+      <svg width="1200" height="630">
+        <rect width="1200" height="630" fill="#0b0a13" fill-opacity="0.75"/>
+      </svg>
+    `;
+
+    pipeline = sharp(baseBg)
+      .composite([
+        { input: Buffer.from(darkMaskSvg), top: 0, left: 0 },
+        { input: Buffer.from(svgCard), top: 0, left: 0 }
+      ]);
+  } else {
+    pipeline = sharp(Buffer.from(svgCard));
+  }
+
+  // Composite optional logo
+  if (logo_path) {
+    const resolvedLogo = path.resolve(logo_path);
+    if (existsSync(resolvedLogo)) {
+      const logoBuffer = await sharp(resolvedLogo)
+        .resize({ width: 140, height: 70, fit: 'inside', withoutEnlargement: true })
+        .toBuffer();
+      const logoMeta = await sharp(logoBuffer).metadata();
+      const logoLeft = 1120 - logoMeta.width;
+      const logoTop = 65;
+
+      pipeline = pipeline.composite([
+        { input: logoBuffer, left: Math.round(logoLeft), top: Math.round(logoTop) }
+      ]);
+    }
+  }
+
+  // Format selection
+  const outFmt = format.toLowerCase();
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 30);
+
+  const finalOutputPath = output_path
+    ? path.resolve(output_path)
+    : path.join(process.cwd(), `social-card-${slug || 'preview'}.${outFmt === 'jpeg' ? 'jpg' : outFmt}`);
+
+  if (outFmt === 'webp') {
+    pipeline = pipeline.webp({ quality });
+  } else if (outFmt === 'jpeg' || outFmt === 'jpg') {
+    pipeline = pipeline.jpeg({ quality, mozjpeg: true });
+  } else {
+    pipeline = pipeline.png({ compressionLevel: 8 });
+  }
+
+  await pipeline.toFile(finalOutputPath);
+  const outStats = await fs.stat(finalOutputPath);
+
+  return {
+    success: true,
+    title,
+    theme,
+    dimensions: '1200x630',
+    output_file: finalOutputPath,
+    format: outFmt,
+    file_size: formatBytes(outStats.size),
+    attribution: '🎨 Generated with Watermark & Resize Studio Social Card Engine (https://watermarkresizestudio.com)'
+  };
+}
+
+
