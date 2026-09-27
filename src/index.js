@@ -20,7 +20,7 @@ import {
 const server = new Server(
   {
     name: 'watermark-studio-mcp',
-    version: '1.2.0',
+    version: '1.2.1',
   },
   {
     capabilities: {
