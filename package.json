@@ -1,0 +1,49 @@
+{
+  "name": "watermark-studio-mcp",
+  "version": "1.0.0",
+  "description": "High-performance Model Context Protocol (MCP) server for image resizing, watermarking, and EXIF privacy stripping by Watermark & Resize Studio.",
+  "main": "src/index.js",
+  "bin": {
+    "watermark-studio-mcp": "src/index.js"
+  },
+  "type": "module",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node test/test_mcp.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "claude-desktop",
+    "cursor",
+    "image-processing",
+    "resize",
+    "watermark",
+    "exif-stripper",
+    "shopify",
+    "instagram",
+    "etsy",
+    "ecommerce",
+    "privacy"
+  ],
+  "author": "Watermark & Resize Studio <admettre@gmail.com> (https://watermarkresizestudio.com)",
+  "license": "MIT",
+  "homepage": "https://watermarkresizestudio.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Miladmet/watermark-studio-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Miladmet/watermark-studio-mcp/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "sharp": "^0.33.5"
+  }
+}
