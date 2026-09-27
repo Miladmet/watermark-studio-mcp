@@ -14,13 +14,14 @@ import {
   stripPhotoMetadata,
   batchProcessFolder,
   generateSocialCard,
+  generateFaviconPack,
   PLATFORM_PRESETS
 } from './imageProcessor.js';
 
 const server = new Server(
   {
     name: 'watermark-studio-mcp',
-    version: '1.2.1',
+    version: '1.3.0',
   },
   {
     capabilities: {
@@ -299,6 +300,48 @@ const TOOLS = [
       required: ['title'],
     },
   },
+  {
+    name: 'generate_favicon_ico_pack',
+    description: 'Generate a complete production-grade favicon and app icon suite from a single master logo image, including multi-resolution favicon.ico (16x16, 32x32, 48x48), Apple Touch icon (180x180), Android Chrome icons (192x192, 512x512), site.webmanifest, and ready-to-paste HTML <head> tags.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        image_path: {
+          type: 'string',
+          description: 'Absolute or relative path to the master logo/icon image (PNG, SVG, JPG, WebP).',
+        },
+        output_dir: {
+          type: 'string',
+          description: 'Destination directory where favicon files will be saved. Defaults to ./favicons.',
+        },
+        app_name: {
+          type: 'string',
+          description: 'Application name for site.webmanifest (e.g., "My Web Store"). Default: "My Web App".',
+          default: 'My Web App'
+        },
+        app_short_name: {
+          type: 'string',
+          description: 'Short display name for mobile home screen icon. Defaults to app_name.',
+        },
+        theme_color: {
+          type: 'string',
+          description: 'Browser theme color hex code for site.webmanifest (e.g. "#6366f1"). Default: "#ffffff".',
+          default: '#ffffff'
+        },
+        background_color: {
+          type: 'string',
+          description: 'Background color hex code for PWA launch screen (e.g. "#0b0a13"). Default: "#ffffff".',
+          default: '#ffffff'
+        },
+        padding_percent: {
+          type: 'number',
+          description: 'Padding percentage (0 to 30) inside the icon frame to prevent edge clipping for non-square or circular logos. Default: 0.',
+          default: 0
+        }
+      },
+      required: ['image_path'],
+    },
+  },
 ];
 
 // Handle listing tools
@@ -364,6 +407,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'generate_social_card': {
         const result = await generateSocialCard(args);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'generate_favicon_ico_pack': {
+        const result = await generateFaviconPack(args);
         return {
           content: [
             {

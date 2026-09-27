@@ -8,7 +8,8 @@ import {
   applyWatermark,
   stripPhotoMetadata,
   batchProcessFolder,
-  generateSocialCard
+  generateSocialCard,
+  generateFaviconPack
 } from '../src/imageProcessor.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -175,11 +176,25 @@ async function runDirectTests(sampleImagePath, sampleLogoPath, catalogDir) {
   console.log('  Dimensions:', cardResult.dimensions);
   console.log('  Theme:', cardResult.theme);
   console.log('  Output file:', cardResult.output_file);
-  console.log('  File size:', cardResult.file_size);
+  console.log('\n--- 6. Testing generate_favicon_ico_pack ---');
+
+  // Test 10: Generate complete favicon suite
+  const faviconResult = await generateFaviconPack({
+    image_path: sampleLogoPath,
+    output_dir: path.join(TEST_DIR, 'favicons'),
+    app_name: 'Studio Test Store',
+    theme_color: '#a855f7',
+    background_color: '#0b0a13',
+    padding_percent: 10
+  });
+  console.log('✓ Favicon pack generation test passed:');
+  console.log('  Files created:', faviconResult.files_created);
+  console.log('  Target directory:', faviconResult.output_directory);
+  console.log('  HTML Snippet present:', faviconResult.html_snippet.includes('favicon.ico'));
 }
 
-async function runMcpStdioTests(sampleImagePath, catalogDir) {
-  console.log('\n--- 6. Testing MCP Stdio JSON-RPC Interface ---');
+async function runMcpStdioTests(sampleImagePath, catalogDir, sampleLogoPath) {
+  console.log('\n--- 7. Testing MCP Stdio JSON-RPC Interface ---');
 
   const serverProcess = spawn('node', [path.join(__dirname, '../src/index.js')], {
     stdio: ['pipe', 'pipe', 'pipe']
@@ -241,8 +256,9 @@ async function runMcpStdioTests(sampleImagePath, catalogDir) {
       !toolNames.includes('apply_watermark') ||
       !toolNames.includes('strip_photo_metadata') ||
       !toolNames.includes('batch_process_folder') ||
-      !toolNames.includes('generate_social_card')) {
-    throw new Error('Not all 5 required tools were exposed by MCP server!');
+      !toolNames.includes('generate_social_card') ||
+      !toolNames.includes('generate_favicon_ico_pack')) {
+    throw new Error('Not all 6 required tools were exposed by MCP server!');
   }
 
   // 3. Call batch_process_folder via MCP
@@ -267,7 +283,7 @@ async function runMcpStdioTests(sampleImagePath, catalogDir) {
   const mcpCardResponse = await sendRpc('tools/call', {
     name: 'generate_social_card',
     arguments: {
-      title: 'Watermark Studio MCP v1.2.0 Released',
+      title: 'Watermark Studio MCP v1.3.0 Released',
       subtitle: 'Build social preview cards directly from your AI agent',
       theme: 'cyber-emerald',
       format: 'png',
@@ -286,15 +302,35 @@ async function runMcpStdioTests(sampleImagePath, catalogDir) {
   console.log('  Dimensions:', cardOutput.dimensions);
   console.log('  Attribution present:', cardOutput.attribution.includes('watermarkresizestudio.com'));
 
+  // 5. Call generate_favicon_ico_pack via MCP
+  const mcpFaviconResponse = await sendRpc('tools/call', {
+    name: 'generate_favicon_ico_pack',
+    arguments: {
+      image_path: sampleLogoPath,
+      output_dir: path.join(TEST_DIR, 'mcp_favicons'),
+      app_name: 'Production Store Demo'
+    }
+  }, 5);
+
+  const rawFaviconText = mcpFaviconResponse.result?.content?.[0]?.text;
+  if (mcpFaviconResponse.result?.isError) {
+    console.error('MCP Error text:', rawFaviconText);
+  }
+  const faviconOutput = JSON.parse(rawFaviconText);
+  console.log('✓ MCP tools/call (generate_favicon_ico_pack) executed successfully:');
+  console.log('  Files created:', faviconOutput.files_created);
+  console.log('  ICO present:', faviconOutput.generated_files.some(f => f.file === 'favicon.ico'));
+  console.log('  Attribution present:', faviconOutput.attribution.includes('watermarkresizestudio.com'));
+
   serverProcess.kill();
-  console.log('\n🎉 ALL 5 MCP TOOLS & JSON-RPC PROTOCOL TESTS PASSED 100%!');
+  console.log('\n🎉 ALL 6 MCP TOOLS & JSON-RPC PROTOCOL TESTS PASSED 100%!');
 }
 
 async function main() {
   try {
     const { sampleImagePath, sampleLogoPath, catalogDir } = await setup();
     await runDirectTests(sampleImagePath, sampleLogoPath, catalogDir);
-    await runMcpStdioTests(sampleImagePath, catalogDir);
+    await runMcpStdioTests(sampleImagePath, catalogDir, sampleLogoPath);
   } catch (err) {
     console.error('❌ Test failed with error:', err);
     process.exit(1);

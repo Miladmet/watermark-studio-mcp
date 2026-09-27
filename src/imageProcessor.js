@@ -905,4 +905,188 @@ export async function generateSocialCard(args) {
   };
 }
 
+/**
+ * Package multiple square PNG buffers into a single valid multi-resolution ICO file.
+ * @param {Array<{ size: number, buffer: Buffer }>} pngBuffers 
+ * @returns {Buffer}
+ */
+function buildIcoBuffer(pngBuffers) {
+  const headerSize = 6;
+  const entrySize = 16;
+  const entriesSize = entrySize * pngBuffers.length;
+  let offset = headerSize + entriesSize;
+
+  const header = Buffer.alloc(headerSize);
+  header.writeUInt16LE(0, 0); // Reserved
+  header.writeUInt16LE(1, 2); // 1 = Icon (.ICO)
+  header.writeUInt16LE(pngBuffers.length, 4); // Image count
+
+  const entryBuffers = [];
+  for (const item of pngBuffers) {
+    const entry = Buffer.alloc(entrySize);
+    entry.writeUInt8(item.size >= 256 ? 0 : item.size, 0); // Width
+    entry.writeUInt8(item.size >= 256 ? 0 : item.size, 1); // Height
+    entry.writeUInt8(0, 2); // Palette
+    entry.writeUInt8(0, 3); // Reserved
+    entry.writeUInt16LE(1, 4); // Color planes
+    entry.writeUInt16LE(32, 6); // Bits per pixel
+    entry.writeUInt32LE(item.buffer.length, 8); // Size in bytes
+    entry.writeUInt32LE(offset, 12); // Offset
+    offset += item.buffer.length;
+    entryBuffers.push(entry);
+  }
+
+  return Buffer.concat([header, ...entryBuffers, ...pngBuffers.map(p => p.buffer)]);
+}
+
+/**
+ * Tool 6: generate_favicon_ico_pack
+ * Generate complete production-ready favicon and web app icon suite from a single master image.
+ */
+export async function generateFaviconPack(args) {
+  const {
+    image_path,
+    output_dir,
+    app_name = 'My Web App',
+    app_short_name,
+    theme_color = '#ffffff',
+    background_color = '#ffffff',
+    padding_percent = 0
+  } = args;
+
+  if (!image_path) {
+    throw new Error('image_path is required to generate a favicon pack.');
+  }
+
+  const resolvedInput = path.resolve(image_path);
+  if (!existsSync(resolvedInput)) {
+    throw new Error(`Input master image file not found at: ${resolvedInput}`);
+  }
+
+  const parsedPath = path.parse(resolvedInput);
+  const targetDir = output_dir ? path.resolve(output_dir) : path.join(parsedPath.dir, 'favicons');
+  await fs.mkdir(targetDir, { recursive: true });
+
+  const padFrac = Math.max(0, Math.min(30, Number(padding_percent) || 0)) / 100;
+
+  // Helper to render square icon at any size with optional padding
+  async function renderIcon(size) {
+    if (padFrac > 0) {
+      const innerSize = Math.max(8, Math.round(size * (1 - 2 * padFrac)));
+      const resized = await sharp(resolvedInput)
+        .resize(innerSize, innerSize, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .toBuffer();
+
+      return sharp({
+        create: {
+          width: size,
+          height: size,
+          channels: 4,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        }
+      })
+      .composite([{ input: resized, gravity: 'center' }])
+      .png({ compressionLevel: 9 })
+      .toBuffer();
+    } else {
+      return sharp(resolvedInput)
+        .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+    }
+  }
+
+  const generatedFiles = [];
+
+  // 1. Generate ICO multi-resolution frames (16, 32, 48)
+  const icoSizes = [16, 32, 48];
+  const icoFrames = [];
+  for (const s of icoSizes) {
+    const buf = await renderIcon(s);
+    icoFrames.push({ size: s, buffer: buf });
+  }
+
+  const icoBuffer = buildIcoBuffer(icoFrames);
+  const icoPath = path.join(targetDir, 'favicon.ico');
+  await fs.writeFile(icoPath, icoBuffer);
+  generatedFiles.push({
+    file: 'favicon.ico',
+    path: icoPath,
+    dimensions: '16x16, 32x32, 48x48',
+    file_size: formatBytes(icoBuffer.length),
+    purpose: 'Standard browser tab icon & legacy fallback'
+  });
+
+  // 2. Generate PNG sizes
+  const pngSpecs = [
+    { name: 'favicon-16x16.png', size: 16, purpose: 'Standard browser tab icon (desktop)' },
+    { name: 'favicon-32x32.png', size: 32, purpose: 'High-DPI / Retina browser tab icon' },
+    { name: 'apple-touch-icon.png', size: 180, purpose: 'Apple iOS home screen icon' },
+    { name: 'android-chrome-192x192.png', size: 192, purpose: 'Android PWA home screen icon' },
+    { name: 'android-chrome-512x512.png', size: 512, purpose: 'PWA splash screen icon' }
+  ];
+
+  for (const spec of pngSpecs) {
+    const buf = await renderIcon(spec.size);
+    const filePath = path.join(targetDir, spec.name);
+    await fs.writeFile(filePath, buf);
+    generatedFiles.push({
+      file: spec.name,
+      path: filePath,
+      dimensions: `${spec.size}x${spec.size}`,
+      file_size: formatBytes(buf.length),
+      purpose: spec.purpose
+    });
+  }
+
+  // 3. Generate site.webmanifest
+  const manifest = {
+    name: app_name,
+    short_name: app_short_name || app_name,
+    icons: [
+      {
+        src: '/android-chrome-192x192.png',
+        sizes: '192x192',
+        type: 'image/png'
+      },
+      {
+        src: '/android-chrome-512x512.png',
+        sizes: '512x512',
+        type: 'image/png'
+      }
+    ],
+    theme_color: theme_color,
+    background_color: background_color,
+    display: 'standalone'
+  };
+
+  const manifestPath = path.join(targetDir, 'site.webmanifest');
+  const manifestContent = JSON.stringify(manifest, null, 2);
+  await fs.writeFile(manifestPath, manifestContent, 'utf-8');
+  generatedFiles.push({
+    file: 'site.webmanifest',
+    path: manifestPath,
+    dimensions: 'JSON Manifest',
+    file_size: formatBytes(Buffer.byteLength(manifestContent)),
+    purpose: 'Progressive Web App (PWA) configuration'
+  });
+
+  const htmlSnippet = `<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon-32x32.png" type="image/png">
+<link rel="icon" href="/favicon-16x16.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">`;
+
+  return {
+    success: true,
+    source_image: resolvedInput,
+    output_directory: targetDir,
+    files_created: generatedFiles.length,
+    generated_files: generatedFiles,
+    html_snippet: htmlSnippet,
+    instructions: 'Place the generated files in your website public root directory and paste the html_snippet inside your <head> tag.',
+    attribution: '🎨 Generated with Watermark & Resize Studio Favicon Engine (https://watermarkresizestudio.com)'
+  };
+}
+
 

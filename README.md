@@ -18,6 +18,7 @@ Official open-source MCP server powered by [Watermark & Resize Studio](https://w
 - **🛍️ E-Commerce & Platform Presets**: Instant batch-ready resizing for **Shopify (2048x2048)**, **Etsy (2000x2000)**, **Instagram Square/Story/Portrait**, **YouTube Thumbnails**, **Facebook**, and **Pinterest**.
 - **🛡️ Copyright & Watermark Protection**: Dynamic text and logo compositing with SVG drop shadows, 6-point positioning, opacity control, and repeating tiled patterns for asset protection.
 - **🖼️ 1200x630 OpenGraph Social Cards**: Generate viral Twitter/LinkedIn/OG preview cards with modern gradient themes (`dark-violet`, `ocean-blue`, `sunset`, `cyber-emerald`), auto text-wrapping, brand pills, and background photo/logo overlays.
+- **🎯 Favicon & PWA Icon Pack**: Generate multi-resolution `favicon.ico` (16x16, 32x32, 48x48), Apple Touch icon (180x180), Android Chrome icons (192x192, 512x512), `site.webmanifest`, and copy-paste HTML tags from a single logo.
 - **🔒 Privacy EXIF / GPS Stripper**: Completely removes GPS geolocation coordinates, camera serial numbers, and creator metadata before public publishing.
 - **🚀 WebP & MozJPEG Compression**: Reduces file sizes by 85–95% while maintaining crisp visual fidelity.
 
@@ -133,6 +134,19 @@ Generate professional 1200x630 OpenGraph and Twitter preview cards with modern g
 | `quality` | `number` | No | Compression quality from 1 to 100 (Default: `90`). |
 | `output_path` | `string` | No | Custom destination path (Defaults to `social-card-[slug].[format]`). |
 
+### 6. `generate_favicon_ico_pack`
+Generate a complete production-grade favicon and web application icon suite from a single master logo image, including multi-resolution `favicon.ico`, Apple Touch icons, Android PWA Chrome icons, `site.webmanifest`, and copy-paste `<head>` HTML tags.
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `image_path` | `string` | **Yes** | Path to the master logo/icon image (PNG, SVG, JPG, WebP). |
+| `output_dir` | `string` | No | Destination directory for favicon files (Defaults to `./favicons`). |
+| `app_name` | `string` | No | App name for `site.webmanifest` (Default: `My Web App`). |
+| `app_short_name` | `string` | No | Short name for mobile app icon (Defaults to `app_name`). |
+| `theme_color` | `string` | No | Theme color hex code for browser chrome (Default: `#ffffff`). |
+| `background_color` | `string` | No | Background color hex code for splash screen (Default: `#ffffff`). |
+| `padding_percent` | `number` | No | Padding percent (0-30) inside frame to prevent edge clipping (Default: `0`). |
+
 ---
 
 ## 💻 Running from Local Source (Development)
@@ -168,7 +182,8 @@ This verifies:
 3. EXIF, GPS, and IPTC privacy sanitization.
 4. Parallel multi-core batch processing of entire image folders.
 5. 1200x630 OpenGraph social card generation with gradient themes and brand badges.
-6. Live JSON-RPC protocol compliance over `stdio`.
+6. Multi-resolution `favicon.ico`, Apple Touch, Android PWA icon pack, and `site.webmanifest` generation.
+7. Live JSON-RPC protocol compliance over `stdio`.
 
 ---
 
