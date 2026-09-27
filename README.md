@@ -1,7 +1,7 @@
 # Watermark & Resize Studio MCP Server 🖼️⚡
 
 [![npm version](https://img.shields.io/npm/v/watermark-studio-mcp.svg?color=cb3837)](https://www.npmjs.com/package/watermark-studio-mcp)
-[![smithery badge](https://smithery.ai/badge/Miladmet/watermark-studio-mcp)](https://smithery.ai/server/Miladmet/watermark-studio-mcp)
+[![Glama](https://img.shields.io/badge/Glama-A--Grade%20Verified-10b981.svg)](https://glama.ai/mcp/servers/Miladmet/watermark-studio-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green.svg)](https://nodejs.org)
 [![Engine](https://img.shields.io/badge/Engine-Watermark%20%26%20Resize%20Studio-6366f1.svg)](https://watermarkresizestudio.com)
@@ -23,17 +23,42 @@ Official open-source MCP server powered by [Watermark & Resize Studio](https://w
 
 ---
 
-## 🚀 Instant 1-Click Install via Smithery
+## 🚀 Quick Setup (Claude Desktop & Cursor)
 
-To automatically install and configure for **Claude Desktop**:
-```bash
-npx -y @smithery/cli mcp add Miladmet/watermark-studio-mcp --client claude
+Because `watermark-studio-mcp` is published on the official npm registry, setup takes 10 seconds with **zero build steps**.
+
+### 1. Claude Desktop
+Add to your Claude configuration file:
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "watermark-studio": {
+      "command": "npx",
+      "args": ["-y", "watermark-studio-mcp"]
+    }
+  }
+}
 ```
 
-To install and configure for **Cursor**:
-```bash
-npx -y @smithery/cli mcp add Miladmet/watermark-studio-mcp --client cursor
+### 2. Cursor AI
+Add to `.cursor/mcp.json` in your workspace:
+
+```json
+{
+  "mcpServers": {
+    "watermark-studio": {
+      "command": "npx",
+      "args": ["-y", "watermark-studio-mcp"]
+    }
+  }
+}
 ```
+
+### 3. Verified on Glama
+Explore schemas, interactive docs, and test calls on **[Glama.ai Directory](https://glama.ai/mcp/servers/Miladmet/watermark-studio-mcp)** (A-Grade Verified).
 
 ---
 
@@ -110,41 +135,9 @@ Generate professional 1200x630 OpenGraph and Twitter preview cards with modern g
 
 ---
 
-## 💻 Manual Configuration
+## 💻 Running from Local Source (Development)
 
-### Claude Desktop (`claude_desktop_config.json`)
-
-Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
-
-```json
-{
-  "mcpServers": {
-    "watermark-studio": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "watermark-studio-mcp"
-      ]
-    }
-  }
-}
-```
-
-Or run directly from local clone:
-```json
-{
-  "mcpServers": {
-    "watermark-studio": {
-      "command": "node",
-      "args": [
-        "C:/Users/Milmann/.gemini/antigravity/scratch/watermark-studio-mcp/src/index.js"
-      ]
-    }
-  }
-}
-```
-
-### Cursor (`.cursor/mcp.json`)
+To run directly from a local clone of this repository instead of npm:
 
 ```json
 {
@@ -152,7 +145,7 @@ Or run directly from local clone:
     "watermark-studio": {
       "command": "node",
       "args": [
-        "C:/Users/Milmann/.gemini/antigravity/scratch/watermark-studio-mcp/src/index.js"
+        "C:/path/to/watermark-studio-mcp/src/index.js"
       ]
     }
   }
