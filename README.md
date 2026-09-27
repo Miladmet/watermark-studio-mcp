@@ -1,5 +1,6 @@
 # Watermark & Resize Studio MCP Server 🖼️⚡
 
+[![npm version](https://img.shields.io/npm/v/watermark-studio-mcp.svg?color=cb3837)](https://www.npmjs.com/package/watermark-studio-mcp)
 [![smithery badge](https://smithery.ai/badge/Miladmet/watermark-studio-mcp)](https://smithery.ai/server/Miladmet/watermark-studio-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green.svg)](https://nodejs.org)
