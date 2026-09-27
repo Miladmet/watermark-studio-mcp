@@ -27,12 +27,12 @@ Official open-source MCP server powered by [Watermark & Resize Studio](https://w
 
 To automatically install and configure for **Claude Desktop**:
 ```bash
-npx -y @smithery/cli install Miladmet/watermark-studio-mcp --client claude
+npx -y @smithery/cli mcp add Miladmet/watermark-studio-mcp --client claude
 ```
 
 To install and configure for **Cursor**:
 ```bash
-npx -y @smithery/cli install Miladmet/watermark-studio-mcp --client cursor
+npx -y @smithery/cli mcp add Miladmet/watermark-studio-mcp --client cursor
 ```
 
 ---
