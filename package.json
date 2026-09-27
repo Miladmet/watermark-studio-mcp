@@ -10,7 +10,8 @@
   "files": [
     "src",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "smithery.yaml"
   ],
   "scripts": {
     "start": "node src/index.js",

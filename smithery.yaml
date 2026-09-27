@@ -1,6 +1,9 @@
 startCommand:
   type: stdio
-  config:
-    command: node
-    args:
-      - src/index.js
+  configSchema:
+    type: object
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'watermark-studio-mcp']
+    })
