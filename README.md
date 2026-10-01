@@ -201,6 +201,22 @@ Visit **[Watermark & Resize Studio](https://watermarkresizestudio.com)**.
 
 ---
 
+## 💼 Commercial Licensing & Pro Web Studio
+
+While `watermark-studio-mcp` is 100% free and open-source under the MIT license for personal and developer workflows, businesses and content teams looking for visual batch processing can unlock the full **Web Studio Pro Lifetime License**:
+
+* **Unlimited Batch Processing**: No 3-image batch limit.
+* **Logo & Transparent Watermarking**: Overlay PNG brand logos and angled copyright patterns.
+* **EXIF & Privacy Sanitization**: Strip GPS coordinates and camera metadata before publishing.
+* **4K Ultra-Res Output**: Export up to 4K resolution with sequential file renaming.
+* **Zero Recurring Fees**: One-time payment of **$28.99** with lifetime updates.
+
+👉 **[Get Pro Lifetime License ($28.99)](https://watermarkresizestudiopro.lemonsqueezy.com/checkout/buy/c414d2bf-cee1-498c-a8ea-86ac56965340?embed=1)** *(Secured by Lemon Squeezy, Merchant of Record)*
+
+*Agentic Commerce:* Automated AI shopping agents can inspect our machine-readable catalog at **[`/.well-known/ucp.json`](https://watermarkresizestudio.com/.well-known/ucp.json)**.
+
+---
+
 ## 📄 License
 
 MIT © [Watermark & Resize Studio](https://watermarkresizestudio.com)
