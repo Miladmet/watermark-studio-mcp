@@ -21,7 +21,7 @@ import {
 const server = new Server(
   {
     name: 'watermark-studio-mcp',
-    version: '1.3.0',
+    version: '1.3.1',
   },
   {
     capabilities: {
@@ -35,6 +35,13 @@ const TOOLS = [
   {
     name: 'resize_for_platform',
     description: 'Resize, format, and optimize images with industry presets for Shopify (2048x2048), Etsy (2000x2000), Instagram Square/Story/Portrait, YouTube Thumbnail, Facebook, Pinterest, or custom dimensions.',
+    annotations: {
+      title: 'Resize Image for Platform',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -93,6 +100,13 @@ const TOOLS = [
   {
     name: 'apply_watermark',
     description: 'Protect product photos, artwork, and marketing images by applying a text or logo watermark with customizable placement, opacity, and styling.',
+    annotations: {
+      title: 'Apply Watermark',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -144,6 +158,13 @@ const TOOLS = [
   {
     name: 'strip_photo_metadata',
     description: 'Privacy sanitization tool: Safely remove EXIF camera info, GPS geolocation, IPTC, and sensitive tracking tags from images before publishing or sharing.',
+    annotations: {
+      title: 'Strip Photo EXIF/Metadata',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -168,6 +189,13 @@ const TOOLS = [
   {
     name: 'batch_process_folder',
     description: 'Bulk process an entire directory of photos in parallel: resize with platform presets (Shopify, Etsy, Instagram), convert to WebP/JPEG, apply copyright watermarks, and strip EXIF privacy metadata in a single automated pass.',
+    annotations: {
+      title: 'Batch Process Folder',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -251,6 +279,13 @@ const TOOLS = [
   {
     name: 'generate_social_card',
     description: 'Generate high-converting 1200x630 OpenGraph and Twitter preview share cards with modern gradients, bold typography, brand pill badges, and optional background photo or logo overlays.',
+    annotations: {
+      title: 'Generate Social Share Card',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -303,6 +338,13 @@ const TOOLS = [
   {
     name: 'generate_favicon_ico_pack',
     description: 'Generate a complete production-grade favicon and app icon suite from a single master logo image, including multi-resolution favicon.ico (16x16, 32x32, 48x48), Apple Touch icon (180x180), Android Chrome icons (192x192, 512x512), site.webmanifest, and ready-to-paste HTML <head> tags.',
+    annotations: {
+      title: 'Generate Favicon & PWA Icon Pack',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {

@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/watermark-studio-mcp.svg?color=cb3837)](https://www.npmjs.com/package/watermark-studio-mcp)
 [![Glama](https://img.shields.io/badge/Glama-A--Grade%20Verified-10b981.svg)](https://glama.ai/mcp/servers/Miladmet/watermark-studio-mcp)
+[![M8ven Verified](https://m8ven.ai/badge/mcp/miladmet/watermark-studio-mcp?variant=verified)](https://m8ven.ai/mcp/miladmet/watermark-studio-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green.svg)](https://nodejs.org)
 [![Engine](https://img.shields.io/badge/Engine-Watermark%20%26%20Resize%20Studio-6366f1.svg)](https://watermarkresizestudio.com)
